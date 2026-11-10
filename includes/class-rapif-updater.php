@@ -21,9 +21,9 @@
  * Planner hit in 7.19.1). Either in wp-config.php (takes priority):
  *   define( 'RAPIF_GITHUB_UPDATE_TOKEN', 'github_pat_xxxxxxxxxxxxxxxxxxxx' );
  * ...or via Settings > Product Image Frames. If neither is set, the key
- * already saved for RA Promo Manager or Universal Room Planner on the same
- * site is tried, so a shared R&A key works once it's allowed to read this
- * repo too.
+ * already set for RA Promo Manager, Universal Room Planner or Woo Native
+ * Dimensions on the same site is used (wp-config.php or saved), so a shared
+ * R&A key works once it's allowed to read this repo too.
  *
  * @package RA_Product_Image_Frames
  */
@@ -39,10 +39,16 @@ final class RAPIF_Updater {
 	const OPTION_TOKEN   = 'rapif_github_update_token';
 	const OPTION_CHANNEL = 'rapif_update_channel';
 
-	/** Other R&A plugins' saved keys, tried in this order if this one has none. */
-	const SHARED_TOKEN_OPTIONS = array(
-		'rapm_github_update_token' => 'RA Promo Manager',
-		'urp_github_update_token'  => 'Universal Room Planner',
+	/**
+	 * Other R&A plugins' keys, tried in this order if this one has none:
+	 * wp-config.php constant name => saved option name => plugin name.
+	 * 0.3.1: constants too. Slone keeps Promo Manager's key in wp-config.php,
+	 * so 0.3.0 (options only) found nothing there.
+	 */
+	const SHARED_TOKENS = array(
+		array( 'RAPM_GITHUB_UPDATE_TOKEN', 'rapm_github_update_token', 'RA Promo Manager' ),
+		array( 'URP_GITHUB_UPDATE_TOKEN', 'urp_github_update_token', 'Universal Room Planner' ),
+		array( 'RMA_GITHUB_UPDATE_TOKEN', 'rma_github_update_token', 'Woo Native Dimensions' ),
 	);
 
 	/** @var object|null The update checker. */
@@ -77,11 +83,20 @@ final class RAPIF_Updater {
 			);
 		}
 
-		foreach ( self::SHARED_TOKEN_OPTIONS as $option => $plugin_name ) {
-			$shared = (string) get_option( $option, '' );
-			if ( '' !== $shared ) {
+		foreach ( self::SHARED_TOKENS as $shared ) {
+			list( $constant, $option, $plugin_name ) = $shared;
+
+			if ( defined( $constant ) && constant( $constant ) ) {
 				return array(
-					'token'  => $shared,
+					'token'  => (string) constant( $constant ),
+					'source' => $plugin_name,
+				);
+			}
+
+			$saved = (string) get_option( $option, '' );
+			if ( '' !== $saved ) {
+				return array(
+					'token'  => $saved,
 					'source' => $plugin_name,
 				);
 			}

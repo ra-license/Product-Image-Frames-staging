@@ -2,7 +2,7 @@
 Contributors: ramarketing
 Requires at least: 5.8
 Requires PHP: 7.4
-Stable tag: 0.3.0
+Stable tag: 0.3.1
 License: GPL-2.0-or-later
 
 Keeps product photos the same size and lined up, without painting bars into the photos.
@@ -28,7 +28,7 @@ so that plugin's updates can't break it.
 
 == Installation ==
 
-1. Plugins > Add New > Upload Plugin > choose ra-product-image-frames-0.3.0.zip > Install Now > Activate.
+1. Plugins > Add New > Upload Plugin > choose ra-product-image-frames-0.3.1.zip > Install Now > Activate.
 2. Clear the page cache: WP Rocket > Clear Cache, then CDN Cache > Purge Everything.
 3. Open a category page in a private window. Every photo should sit in a white box.
 
@@ -59,6 +59,10 @@ Settings > Product Image Frames. Leave Update Channel on Production for
 every live website.
 
 == Changelog ==
+
+= 0.3.1 - 2026-11-10 =
+* Fix: also uses the GitHub key set in wp-config.php for another R&A plugin
+  (Promo Manager, Room Planner or Woo Native Dimensions).
 
 = 0.3.0 - 2026-11-10 =
 * Updates itself from GitHub: no more uploading a zip for each new version.
