@@ -2,7 +2,7 @@
 Contributors: ramarketing
 Requires at least: 5.8
 Requires PHP: 7.4
-Stable tag: 0.1.0
+Stable tag: 0.1.1
 License: GPL-2.0-or-later
 
 Keeps product photos the same size and lined up, without painting bars into the photos.
@@ -28,7 +28,7 @@ so that plugin's updates can't break it.
 
 == Installation ==
 
-1. Plugins > Add New > Upload Plugin > choose ra-product-image-frames-0.1.0.zip > Install Now > Activate.
+1. Plugins > Add New > Upload Plugin > choose ra-product-image-frames-0.1.1.zip > Install Now > Activate.
 2. Clear the page cache: WP Rocket > Clear Cache, then CDN Cache > Purge Everything.
 3. Open a category page in a private window. Every photo should sit in a white box.
 
@@ -41,6 +41,10 @@ Original photos are bigger files than the old copies, so category pages load
 more data until version 0.2.0 adds light, compressed copies.
 
 == Changelog ==
+
+= 0.1.1 - 2026-11-10 =
+* Fix: category and product-page frames now keep the store's shape (4:3 on
+  StarFine) even when the image size isn't marked as cropped.
 
 = 0.1.0 - 2026-11-10 =
 * First version. Shows clean original product photos centered in white

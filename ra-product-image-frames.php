@@ -2,7 +2,7 @@
 /**
  * Plugin Name: R&A Product Image Frames
  * Description: Keeps product photos the same size and lined up on category and product pages without painting bars into the photos. Each photo sits centered in a white box. Takes over the "make every photo the same shape" job from Smart Image Resize.
- * Version: 0.1.0
+ * Version: 0.1.1
  * Author: RA Marketing
  * Requires at least: 5.8
  * Requires PHP: 7.4
@@ -34,12 +34,18 @@
 // category pages are heavier until 0.2.0 makes light, compressed copies.
 // Turning the plugin off puts every page back exactly as it was.
 //
+// v0.1.1 (2026-11-10): fix found live on StarFine right after 0.1.0 went on.
+// The catalog and product-page frames were missing because Smart Image Resize
+// registers its sizes without WordPress's "crop" flag, and 0.1.0 only trusted
+// cropped sizes. Now any size with a set width and height gives the frame its
+// shape, then WooCommerce's image settings, then square.
+//
 // For a side-by-side check, a logged-in admin can add ?rapif=off to any page
 // to see it without this plugin.
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'RAPIF_VERSION', '0.1.0' );
+define( 'RAPIF_VERSION', '0.1.1' );
 
 final class RAPIF_Plugin {
 
@@ -56,10 +62,13 @@ final class RAPIF_Plugin {
 		'shop_thumbnail'                => 'gallery',
 	);
 
-	/** Frame shape to use when a size has no fixed shape of its own. */
+	/**
+	 * Frame shape to use when a size has no fixed shape of its own (for
+	 * example WooCommerce's "Uncropped" setting). Square keeps the grid even.
+	 */
 	const FALLBACK_RATIO = array(
-		'catalog' => '',
-		'single'  => '',
+		'catalog' => '1 / 1',
+		'single'  => '1 / 1',
 		'gallery' => '1 / 1',
 	);
 
@@ -164,12 +173,30 @@ final class RAPIF_Plugin {
 				if ( empty( $subsizes[ $name ] ) ) {
 					continue;
 				}
+				// The shape counts even when the size isn't marked "crop": Smart
+				// Image Resize registers 600x450 without it and still makes every
+				// copy exactly that shape (seen live on StarFine, 0.1.0).
 				$w = (int) $subsizes[ $name ]['width'];
 				$h = (int) $subsizes[ $name ]['height'];
-				if ( $w > 0 && $h > 0 && ! empty( $subsizes[ $name ]['crop'] ) ) {
+				if ( $w > 0 && $h > 0 ) {
 					$ratio = $w . ' / ' . $h;
 				}
 				break;
+			}
+		}
+
+		// Next, WooCommerce's own image settings.
+		if ( '' === $ratio && function_exists( 'wc_get_image_size' ) ) {
+			$wc_names = array(
+				'catalog' => 'thumbnail',
+				'single'  => 'single',
+				'gallery' => 'gallery_thumbnail',
+			);
+			$wc_size  = wc_get_image_size( $wc_names[ $kind ] );
+			$w        = isset( $wc_size['width'] ) ? (int) $wc_size['width'] : 0;
+			$h        = isset( $wc_size['height'] ) ? (int) $wc_size['height'] : 0;
+			if ( $w > 0 && $h > 0 ) {
+				$ratio = $w . ' / ' . $h;
 			}
 		}
 
