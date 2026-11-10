@@ -2,7 +2,7 @@
 /**
  * Plugin Name: R&A Product Image Frames
  * Description: Keeps product photos the same size and lined up on category and product pages without painting bars into the photos. Each photo sits centered in a white box. Takes over the "make every photo the same shape" job from Smart Image Resize.
- * Version: 0.1.1
+ * Version: 0.1.2
  * Author: RA Marketing
  * Requires at least: 5.8
  * Requires PHP: 7.4
@@ -40,12 +40,16 @@
 // cropped sizes. Now any size with a set width and height gives the frame its
 // shape, then WooCommerce's image settings, then square.
 //
+// v0.1.2 (2026-11-10): fix found live on Indian River. WP Rocket's "Remove
+// Unused CSS" emptied this plugin's style tag, so photos were swapped but not
+// framed. The style tag is now on WP Rocket's keep list.
+//
 // For a side-by-side check, a logged-in admin can add ?rapif=off to any page
 // to see it without this plugin.
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'RAPIF_VERSION', '0.1.1' );
+define( 'RAPIF_VERSION', '0.1.2' );
 
 final class RAPIF_Plugin {
 
@@ -87,6 +91,25 @@ final class RAPIF_Plugin {
 		// copy the clean address we set.
 		add_filter( 'wp_get_attachment_image_attributes', array( __CLASS__, 'filter_image_attributes' ), 5, 3 );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_styles' ) );
+
+		// WP Rocket's "Remove Unused CSS" empties inline style tags and serves
+		// its own saved copy of the page's CSS instead, which doesn't have the
+		// frames until it's rebuilt. Keep our few lines in place. (Filter from
+		// WP Rocket 3.11+; does nothing on sites without WP Rocket.)
+		add_filter( 'rocket_rucss_inline_atts_exclusions', array( __CLASS__, 'keep_styles_in_rocket' ) );
+	}
+
+	/**
+	 * Tells WP Rocket's Remove Unused CSS to leave this plugin's style tag alone.
+	 *
+	 * @param array $exclusions Patterns matched against a style tag's attributes.
+	 * @return array
+	 */
+	public static function keep_styles_in_rocket( $exclusions ) {
+		$exclusions   = is_array( $exclusions ) ? $exclusions : array();
+		$exclusions[] = 'ra-product-image-frames-inline-css';
+
+		return $exclusions;
 	}
 
 	/**
