@@ -16,6 +16,8 @@ wp_clear_scheduled_hook( 'rapif_make_copies' );
 
 delete_option( 'rapif_state' );
 delete_option( 'rapif_wanted' );
+delete_option( 'rapif_github_update_token' );
+delete_option( 'rapif_update_channel' );
 delete_transient( 'rapif_lock' );
 delete_transient( 'rapif_check' );
 delete_post_meta_by_key( '_rapif_copies' );
