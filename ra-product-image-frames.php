@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: R&A Product Image Frames
- * Description: Keeps product photos the same size and lined up on category and product pages without painting bars into the photos. Each photo sits centered in a white box. Takes over the "make every photo the same shape" job from Smart Image Resize.
- * Version: 0.1.2
+ * Description: Keeps product photos the same size and lined up on category and product pages without painting bars into the photos. Each photo sits centered in a white box, and the plugin makes light, compressed copies of product photos in the background.
+ * Version: 0.2.0
  * Author: RA Marketing
  * Requires at least: 5.8
  * Requires PHP: 7.4
@@ -30,10 +30,6 @@
 // - Uses only WordPress's own image tag filter. Nothing here reads or depends
 //   on Smart Image Resize's code, so its updates can't break this.
 //
-// Known trade-off: originals are larger files than the old copies, so
-// category pages are heavier until 0.2.0 makes light, compressed copies.
-// Turning the plugin off puts every page back exactly as it was.
-//
 // v0.1.1 (2026-11-10): fix found live on StarFine right after 0.1.0 went on.
 // The catalog and product-page frames were missing because Smart Image Resize
 // registers its sizes without WordPress's "crop" flag, and 0.1.0 only trusted
@@ -44,12 +40,32 @@
 // Unused CSS" emptied this plugin's style tag, so photos were swapped but not
 // framed. The style tag is now on WP Rocket's keep list.
 //
+// v0.2.0 (2026-11-10): light copies (includes/class-rapif-copies.php).
+// - For each product photo the plugin makes two copies from the clean
+//   original: one that fits the product-page box and one that fits the
+//   catalog box. Each copy is only shrunk, never padded or cropped, and is
+//   saved as compressed WebP (or the original format if the server can't
+//   make WebP). Copies live in uploads/rapif/; originals are never changed.
+// - The page uses a copy as soon as it exists and the original until then,
+//   so nothing ever looks broken while copies are being made.
+// - Copies are made on the server in the background with WooCommerce's
+//   Action Scheduler: no browser tab needs to stay open. Photos someone has
+//   just looked at go first, any time of day. The full sweep of every product
+//   (newest first) runs only at night, 8 PM to 7 AM site time, to keep
+//   daytime load low. Each batch stops after 20 seconds.
+// - Variation photos (when a shopper picks a color) now get the same clean
+//   treatment; 0.1.x missed them.
+// - The Plugins screen shows how many copies have been made.
+//
 // For a side-by-side check, a logged-in admin can add ?rapif=off to any page
 // to see it without this plugin.
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'RAPIF_VERSION', '0.1.2' );
+define( 'RAPIF_VERSION', '0.2.0' );
+define( 'RAPIF_FILE', __FILE__ );
+
+require_once __DIR__ . '/includes/class-rapif-copies.php';
 
 final class RAPIF_Plugin {
 
@@ -67,22 +83,31 @@ final class RAPIF_Plugin {
 	);
 
 	/**
-	 * Frame shape to use when a size has no fixed shape of its own (for
-	 * example WooCommerce's "Uncropped" setting). Square keeps the grid even.
+	 * Box to use when a size has no fixed shape of its own (for example
+	 * WooCommerce's "Uncropped" setting). Square keeps the grid even.
 	 */
-	const FALLBACK_RATIO = array(
-		'catalog' => '1 / 1',
-		'single'  => '1 / 1',
-		'gallery' => '1 / 1',
+	const FALLBACK_BOX = array(
+		'catalog' => array( 600, 600 ),
+		'single'  => array( 1200, 1200 ),
+		'gallery' => array( 150, 150 ),
 	);
 
 	/** @var bool|null Cached result of is_active(). */
 	private static $active = null;
 
+	/** @var array Cached result of box(). */
+	private static $boxes = array();
+
 	public static function init() {
+		RAPIF_Copies::init();
+
+		if ( is_admin() ) {
+			add_filter( 'plugin_row_meta', array( __CLASS__, 'plugin_row_meta' ), 10, 2 );
+		}
+
 		// Storefront only. Admin screens (including the Media Library) stay as
 		// they are. AJAX is allowed because the theme loads more products,
-		// filters and quick views through it.
+		// filters, quick views and variation photos through it.
 		if ( is_admin() && ! wp_doing_ajax() ) {
 			return;
 		}
@@ -90,6 +115,7 @@ final class RAPIF_Plugin {
 		// Run before themes and lazy-load plugins (default priority 10), so they
 		// copy the clean address we set.
 		add_filter( 'wp_get_attachment_image_attributes', array( __CLASS__, 'filter_image_attributes' ), 5, 3 );
+		add_filter( 'woocommerce_available_variation', array( __CLASS__, 'filter_variation' ), 20, 3 );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_styles' ) );
 
 		// WP Rocket's "Remove Unused CSS" empties inline style tags and serves
@@ -115,7 +141,7 @@ final class RAPIF_Plugin {
 	/**
 	 * Whether the plugin should act on this request.
 	 */
-	private static function is_active() {
+	public static function is_active() {
 		if ( null !== self::$active ) {
 			return self::$active;
 		}
@@ -141,8 +167,9 @@ final class RAPIF_Plugin {
 	}
 
 	/**
-	 * Swaps a padded product photo copy for the clean original and marks the
-	 * image so the stylesheet can frame it.
+	 * Swaps a padded product photo copy for a clean one (the light copy if it's
+	 * ready, otherwise the original) and marks the image so the stylesheet can
+	 * frame it.
 	 *
 	 * @param array        $attr       Image tag attributes.
 	 * @param WP_Post      $attachment The image.
@@ -160,14 +187,13 @@ final class RAPIF_Plugin {
 			return $attr;
 		}
 
-		$original = wp_get_attachment_image_url( $attachment->ID, 'full' );
-		if ( ! $original ) {
+		$kind  = self::SIZES[ $size ];
+		$clean = self::clean_url( $attachment->ID, $kind );
+		if ( '' === $clean ) {
 			return $attr;
 		}
 
-		$kind = self::SIZES[ $size ];
-
-		$attr['src'] = $original;
+		$attr['src'] = $clean;
 
 		// The other sizes in srcset are the padded copies, so the browser must
 		// not pick one of them instead.
@@ -180,36 +206,90 @@ final class RAPIF_Plugin {
 	}
 
 	/**
-	 * Frame shape for one kind of image, as a CSS aspect-ratio value such as
-	 * "600 / 450", or '' to keep the photo's own shape.
+	 * Clean address for one product photo: the light copy if it's ready,
+	 * otherwise the original upload.
+	 *
+	 * @param int    $attachment_id Image ID.
+	 * @param string $kind          catalog, single or gallery.
+	 * @return string '' if the image has no file.
+	 */
+	public static function clean_url( $attachment_id, $kind ) {
+		$copy = RAPIF_Copies::url( $attachment_id, 'single' === $kind ? 'single' : 'catalog' );
+		if ( '' !== $copy ) {
+			return $copy;
+		}
+
+		$original = wp_get_attachment_image_url( $attachment_id, 'full' );
+
+		return $original ? $original : '';
+	}
+
+	/**
+	 * Same treatment for the photo WooCommerce swaps in when a shopper picks a
+	 * variation (a color or size). WooCommerce builds that data without the
+	 * image tag filter, so 0.1.x showed the padded copy there.
+	 *
+	 * @param array $data      Variation data sent to the page.
+	 * @param mixed $product   Parent product.
+	 * @param mixed $variation The variation.
+	 * @return array
+	 */
+	public static function filter_variation( $data, $product, $variation ) {
+		if ( ! is_array( $data ) || empty( $data['image_id'] ) || empty( $data['image'] ) || ! is_array( $data['image'] ) ) {
+			return $data;
+		}
+		if ( ! self::is_active() || ! wp_attachment_is_image( (int) $data['image_id'] ) ) {
+			return $data;
+		}
+
+		$id     = (int) $data['image_id'];
+		$single = self::clean_url( $id, 'single' );
+		$small  = self::clean_url( $id, 'catalog' );
+		if ( '' === $single || '' === $small ) {
+			return $data;
+		}
+
+		$data['image']['src']                   = $single;
+		$data['image']['srcset']                = '';
+		$data['image']['sizes']                 = '';
+		$data['image']['thumb_src']             = $small;
+		$data['image']['gallery_thumbnail_src'] = $small;
+
+		return $data;
+	}
+
+	/**
+	 * Width and height of the box for one kind of image, from the image size
+	 * the store has set up.
 	 *
 	 * @param string $kind catalog, single or gallery.
-	 * @return string
+	 * @return int[] array( width, height )
 	 */
-	private static function frame_ratio( $kind ) {
-		$names = array_keys( self::SIZES, $kind, true );
-		$ratio = '';
+	public static function box( $kind ) {
+		if ( isset( self::$boxes[ $kind ] ) ) {
+			return self::$boxes[ $kind ];
+		}
 
+		$names = array_keys( self::SIZES, $kind, true );
+		$w     = 0;
+		$h     = 0;
+
+		// The shape counts even when the size isn't marked "crop": Smart Image
+		// Resize registers 600x450 without it and still makes every copy exactly
+		// that shape (seen live on StarFine, 0.1.0).
 		if ( function_exists( 'wp_get_registered_image_subsizes' ) ) {
 			$subsizes = wp_get_registered_image_subsizes();
 			foreach ( $names as $name ) {
-				if ( empty( $subsizes[ $name ] ) ) {
-					continue;
+				if ( ! empty( $subsizes[ $name ] ) ) {
+					$w = (int) $subsizes[ $name ]['width'];
+					$h = (int) $subsizes[ $name ]['height'];
+					break;
 				}
-				// The shape counts even when the size isn't marked "crop": Smart
-				// Image Resize registers 600x450 without it and still makes every
-				// copy exactly that shape (seen live on StarFine, 0.1.0).
-				$w = (int) $subsizes[ $name ]['width'];
-				$h = (int) $subsizes[ $name ]['height'];
-				if ( $w > 0 && $h > 0 ) {
-					$ratio = $w . ' / ' . $h;
-				}
-				break;
 			}
 		}
 
 		// Next, WooCommerce's own image settings.
-		if ( '' === $ratio && function_exists( 'wc_get_image_size' ) ) {
+		if ( ( $w <= 0 || $h <= 0 ) && function_exists( 'wc_get_image_size' ) ) {
 			$wc_names = array(
 				'catalog' => 'thumbnail',
 				'single'  => 'single',
@@ -218,14 +298,41 @@ final class RAPIF_Plugin {
 			$wc_size  = wc_get_image_size( $wc_names[ $kind ] );
 			$w        = isset( $wc_size['width'] ) ? (int) $wc_size['width'] : 0;
 			$h        = isset( $wc_size['height'] ) ? (int) $wc_size['height'] : 0;
-			if ( $w > 0 && $h > 0 ) {
-				$ratio = $w . ' / ' . $h;
-			}
 		}
 
-		if ( '' === $ratio ) {
-			$ratio = self::FALLBACK_RATIO[ $kind ];
+		// A width with no height means "any height": use a square box.
+		if ( $w > 0 && $h <= 0 ) {
+			$h = $w;
 		}
+		if ( $w <= 0 || $h <= 0 ) {
+			list( $w, $h ) = self::FALLBACK_BOX[ $kind ];
+		}
+
+		/**
+		 * Filters the box size for one kind of product photo.
+		 *
+		 * @param int[]  $box  array( width, height ) in pixels.
+		 * @param string $kind catalog, single or gallery.
+		 */
+		$box = apply_filters( 'rapif_box', array( $w, $h ), $kind );
+		$w   = isset( $box[0] ) ? max( 1, (int) $box[0] ) : $w;
+		$h   = isset( $box[1] ) ? max( 1, (int) $box[1] ) : $h;
+
+		self::$boxes[ $kind ] = array( $w, $h );
+
+		return self::$boxes[ $kind ];
+	}
+
+	/**
+	 * Frame shape for one kind of image, as a CSS aspect-ratio value such as
+	 * "600 / 450".
+	 *
+	 * @param string $kind catalog, single or gallery.
+	 * @return string
+	 */
+	private static function frame_ratio( $kind ) {
+		list( $w, $h ) = self::box( $kind );
+		$ratio         = $w . ' / ' . $h;
 
 		/**
 		 * Filters the frame shape for one kind of product photo.
@@ -260,7 +367,7 @@ final class RAPIF_Plugin {
 			return;
 		}
 
-		$css  = 'img.rapif-frame{background-color:' . self::background() . ';object-fit:contain;object-position:center;}';
+		$css = 'img.rapif-frame{background-color:' . self::background() . ';object-fit:contain;object-position:center;}';
 
 		foreach ( array( 'catalog', 'single', 'gallery' ) as $kind ) {
 			$ratio = self::frame_ratio( $kind );
@@ -273,6 +380,24 @@ final class RAPIF_Plugin {
 		wp_enqueue_style( 'ra-product-image-frames' );
 		wp_add_inline_style( 'ra-product-image-frames', $css );
 	}
+
+	/**
+	 * Progress line under the plugin's name on the Plugins screen.
+	 *
+	 * @param string[] $meta Links and text under the plugin description.
+	 * @param string   $file Plugin file.
+	 * @return string[]
+	 */
+	public static function plugin_row_meta( $meta, $file ) {
+		if ( plugin_basename( RAPIF_FILE ) !== $file ) {
+			return $meta;
+		}
+
+		$meta[] = esc_html( RAPIF_Copies::status_line() );
+
+		return $meta;
+	}
 }
 
 add_action( 'plugins_loaded', array( 'RAPIF_Plugin', 'init' ) );
+register_deactivation_hook( __FILE__, array( 'RAPIF_Copies', 'deactivate' ) );
