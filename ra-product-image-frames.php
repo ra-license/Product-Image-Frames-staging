@@ -2,7 +2,7 @@
 /**
  * Plugin Name: R&A Product Image Frames
  * Description: Keeps product photos the same size and lined up on category and product pages without painting bars into the photos. Each photo sits centered in a white box, and the plugin makes light, compressed copies of product photos in the background.
- * Version: 0.3.1
+ * Version: 0.3.2
  * Author: RA Marketing
  * Requires at least: 5.8
  * Requires PHP: 7.4
@@ -68,12 +68,16 @@
 // Room Planner, Woo Native Dimensions), not only from their saved settings.
 // Also the first version delivered by the new GitHub updates.
 //
+// v0.3.2 (2026-11-11): the plugin's screen moved from Settings to
+// WooCommerce > Product Image Frames, next to the other store photo settings.
+// The old address forwards to the new one.
+//
 // For a side-by-side check, a logged-in admin can add ?rapif=off to any page
 // to see it without this plugin.
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'RAPIF_VERSION', '0.3.1' );
+define( 'RAPIF_VERSION', '0.3.2' );
 define( 'RAPIF_FILE', __FILE__ );
 
 require_once __DIR__ . '/includes/class-rapif-copies.php';

@@ -1,7 +1,13 @@
 <?php
 /**
- * Settings > Product Image Frames (added in 0.3.0): progress of the light
- * copies and the Auto-Update Settings, worded the same as RA Promo Manager's.
+ * WooCommerce > Product Image Frames: progress of the light copies and the
+ * Auto-Update Settings, worded the same as RA Promo Manager's.
+ *
+ * 0.3.0 put this under Settings. 0.3.2 moved it under WooCommerce, since it
+ * only affects product photos and that's where store photo settings live
+ * (Smart Image Resize and Woo Native Dimensions are there too). Without
+ * WooCommerce it stays under Settings. The old Settings address forwards
+ * to the new one.
  *
  * @package RA_Product_Image_Frames
  */
@@ -14,12 +20,45 @@ final class RAPIF_Settings {
 	const GROUP = 'rapif_settings';
 
 	public static function init() {
-		add_action( 'admin_menu', array( __CLASS__, 'menu' ) );
+		add_action( 'admin_menu', array( __CLASS__, 'menu' ), 60 );
 		add_action( 'admin_init', array( __CLASS__, 'register' ) );
+		add_action( 'admin_page_access_denied', array( __CLASS__, 'forward_old_address' ) );
 		add_filter( 'plugin_action_links_' . plugin_basename( RAPIF_FILE ), array( __CLASS__, 'action_links' ) );
 	}
 
+	/**
+	 * Whether the screen lives under WooCommerce on this site.
+	 *
+	 * @return bool
+	 */
+	private static function under_woocommerce() {
+		return class_exists( 'WooCommerce' );
+	}
+
+	/**
+	 * Address of this screen.
+	 *
+	 * @return string
+	 */
+	public static function url() {
+		return self::under_woocommerce()
+			? admin_url( 'admin.php?page=' . self::PAGE )
+			: admin_url( 'options-general.php?page=' . self::PAGE );
+	}
+
 	public static function menu() {
+		if ( self::under_woocommerce() ) {
+			add_submenu_page(
+				'woocommerce',
+				__( 'Product Image Frames', 'ra-product-image-frames' ),
+				__( 'Product Image Frames', 'ra-product-image-frames' ),
+				'manage_options',
+				self::PAGE,
+				array( __CLASS__, 'render' )
+			);
+			return;
+		}
+
 		add_options_page(
 			__( 'Product Image Frames', 'ra-product-image-frames' ),
 			__( 'Product Image Frames', 'ra-product-image-frames' ),
@@ -27,6 +66,23 @@ final class RAPIF_Settings {
 			self::PAGE,
 			array( __CLASS__, 'render' )
 		);
+	}
+
+	/**
+	 * The 0.3.0 address (Settings > Product Image Frames) forwards to
+	 * WooCommerce > Product Image Frames instead of showing "Sorry, you are
+	 * not allowed to access this page."
+	 */
+	public static function forward_old_address() {
+		global $pagenow;
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only redirect.
+		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+
+		if ( 'options-general.php' === $pagenow && self::PAGE === $page && self::under_woocommerce() && current_user_can( 'manage_options' ) ) {
+			wp_safe_redirect( self::url() );
+			exit;
+		}
 	}
 
 	public static function register() {
@@ -49,7 +105,7 @@ final class RAPIF_Settings {
 	 * @return string[]
 	 */
 	public static function action_links( $links ) {
-		$url = admin_url( 'options-general.php?page=' . self::PAGE );
+		$url = self::url();
 		array_unshift( $links, '<a href="' . esc_url( $url ) . '">' . esc_html__( 'Settings', 'ra-product-image-frames' ) . '</a>' );
 
 		return $links;

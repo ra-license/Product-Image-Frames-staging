@@ -20,7 +20,7 @@
  * repo(s) (a token scoped to other repos silently fails here, the bug Room
  * Planner hit in 7.19.1). Either in wp-config.php (takes priority):
  *   define( 'RAPIF_GITHUB_UPDATE_TOKEN', 'github_pat_xxxxxxxxxxxxxxxxxxxx' );
- * ...or via Settings > Product Image Frames. If neither is set, the key
+ * ...or via WooCommerce > Product Image Frames. If neither is set, the key
  * already set for RA Promo Manager, Universal Room Planner or Woo Native
  * Dimensions on the same site is used (wp-config.php or saved), so a shared
  * R&A key works once it's allowed to read this repo too.
