@@ -2,7 +2,7 @@
 Contributors: ramarketing
 Requires at least: 5.8
 Requires PHP: 7.4
-Stable tag: 0.3.3
+Stable tag: 0.3.4
 License: GPL-2.0-or-later
 
 Keeps product photos the same size and lined up, without painting bars into the photos.
@@ -65,6 +65,10 @@ checklist. When every row says Ready, deactivate and delete Smart Image
 Resize PRO and ReThumbify Pro, then clear the WP Rocket and CDN caches.
 
 == Changelog ==
+
+= 0.3.4 - 2026-11-12 =
+* Shows up correctly in R&A's Plugin Monitor (it was listed as "probably
+  deleted" before).
 
 = 0.3.3 - 2026-11-12 =
 * Makes it safe to remove Smart Image Resize: WooCommerce no longer remakes
