@@ -128,6 +128,50 @@ final class RAPIF_Settings {
 			<p><?php echo esc_html( RAPIF_Copies::status_line() ); ?></p>
 			<p class="description"><?php esc_html_e( 'Each product photo gets a small, fast copy for category pages and one for the product page. Pages show the original photo until its copy is ready. Original photos are never changed.', 'ra-product-image-frames' ); ?></p>
 
+			<h2>
+				<?php
+				echo esc_html(
+					RAPIF_Safeguards::smart_image_resize_active()
+						? __( 'Before removing Smart Image Resize', 'ra-product-image-frames' )
+						: __( 'Old image plugins', 'ra-product-image-frames' )
+				);
+				?>
+			</h2>
+			<table class="widefat striped" style="max-width:900px;" role="presentation">
+				<tbody>
+				<?php foreach ( RAPIF_Safeguards::checklist() as $row ) : ?>
+					<?php
+					if ( true === $row['ok'] ) {
+						$icon  = 'dashicons-yes-alt';
+						$color = '#008a20';
+						$state = __( 'Ready', 'ra-product-image-frames' );
+					} elseif ( false === $row['ok'] ) {
+						$icon  = 'dashicons-warning';
+						$color = '#d63638';
+						$state = __( 'Fix first', 'ra-product-image-frames' );
+					} else {
+						$icon  = 'dashicons-info';
+						$color = '#996800';
+						$state = __( 'Check', 'ra-product-image-frames' );
+					}
+					?>
+					<tr>
+						<td style="width:110px;white-space:nowrap;">
+							<span class="dashicons <?php echo esc_attr( $icon ); ?>" style="color:<?php echo esc_attr( $color ); ?>;" aria-hidden="true"></span>
+							<strong style="color:<?php echo esc_attr( $color ); ?>;"><?php echo esc_html( $state ); ?></strong>
+						</td>
+						<td>
+							<strong><?php echo esc_html( $row['label'] ); ?></strong><br />
+							<?php echo esc_html( $row['detail'] ); ?>
+						</td>
+					</tr>
+				<?php endforeach; ?>
+				</tbody>
+			</table>
+			<?php if ( RAPIF_Safeguards::smart_image_resize_active() ) : ?>
+				<p class="description"><?php esc_html_e( 'When every row says Ready (or you\'ve checked the Check rows): deactivate and delete Smart Image Resize PRO and ReThumbify Pro, then clear the WP Rocket and CDN caches.', 'ra-product-image-frames' ); ?></p>
+			<?php endif; ?>
+
 			<form method="post" action="options.php">
 				<?php settings_fields( self::GROUP ); ?>
 

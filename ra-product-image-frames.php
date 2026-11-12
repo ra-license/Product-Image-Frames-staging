@@ -2,7 +2,7 @@
 /**
  * Plugin Name: R&A Product Image Frames
  * Description: Keeps product photos the same size and lined up on category and product pages without painting bars into the photos. Each photo sits centered in a white box, and the plugin makes light, compressed copies of product photos in the background.
- * Version: 0.3.2
+ * Version: 0.3.3
  * Author: RA Marketing
  * Requires at least: 5.8
  * Requires PHP: 7.4
@@ -72,20 +72,32 @@
 // WooCommerce > Product Image Frames, next to the other store photo settings.
 // The old address forwards to the new one.
 //
+// v0.3.3 (2026-11-12): safeguards for removing Smart Image Resize
+// (includes/class-rapif-safeguards.php). WooCommerce no longer remakes product
+// photos (no background job after its photo settings are saved, no resizing
+// while pages load). Code that asks only for a product photo's web address
+// (Shop the Look, category thumbnails, search/email/feed data) gets the clean
+// copy too. WooCommerce > Product Image Frames shows a "Before removing Smart
+// Image Resize" checklist.
+//
 // For a side-by-side check, a logged-in admin can add ?rapif=off to any page
 // to see it without this plugin.
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'RAPIF_VERSION', '0.3.2' );
+define( 'RAPIF_VERSION', '0.3.3' );
 define( 'RAPIF_FILE', __FILE__ );
 
 require_once __DIR__ . '/includes/class-rapif-copies.php';
 require_once __DIR__ . '/includes/class-rapif-updater.php';
 require_once __DIR__ . '/includes/class-rapif-settings.php';
+require_once __DIR__ . '/includes/class-rapif-safeguards.php';
 
 // Set up before WordPress's own update check fires (not on a hook).
 RAPIF_Updater::init( __FILE__ );
+
+// Before WooCommerce sets up its image jobs on init (0.3.3).
+RAPIF_Safeguards::init();
 
 final class RAPIF_Plugin {
 

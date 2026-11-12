@@ -2,7 +2,7 @@
 Contributors: ramarketing
 Requires at least: 5.8
 Requires PHP: 7.4
-Stable tag: 0.3.2
+Stable tag: 0.3.3
 License: GPL-2.0-or-later
 
 Keeps product photos the same size and lined up, without painting bars into the photos.
@@ -28,7 +28,7 @@ so that plugin's updates can't break it.
 
 == Installation ==
 
-1. Plugins > Add New > Upload Plugin > choose ra-product-image-frames-0.3.2.zip > Install Now > Activate.
+1. Plugins > Add New > Upload Plugin > choose ra-product-image-frames.zip > Install Now > Activate.
 2. Clear the page cache: WP Rocket > Clear Cache, then CDN Cache > Purge Everything.
 3. Open a category page in a private window. Every photo should sit in a white box.
 
@@ -58,7 +58,19 @@ and Promo Manager. Each site needs the GitHub Update Key once, under
 WooCommerce > Product Image Frames. Leave Update Channel on Production for
 every live website.
 
+== Removing Smart Image Resize ==
+
+WooCommerce > Product Image Frames has a "Before removing Smart Image Resize"
+checklist. When every row says Ready, deactivate and delete Smart Image
+Resize PRO and ReThumbify Pro, then clear the WP Rocket and CDN caches.
+
 == Changelog ==
+
+= 0.3.3 - 2026-11-12 =
+* Makes it safe to remove Smart Image Resize: WooCommerce no longer remakes
+  every product photo, and search, Shop the Look, email and feed data get
+  the clean photos too.
+* New "Before removing Smart Image Resize" checklist on the plugin's screen.
 
 = 0.3.2 - 2026-11-11 =
 * The plugin's screen moved to WooCommerce > Product Image Frames, next to
