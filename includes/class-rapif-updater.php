@@ -168,6 +168,7 @@ final class RAPIF_Updater {
 				'channel'   => self::channel(),
 			)
 		);
+		add_filter( 'ra_monitor_checkin_payload', array( __CLASS__, 'add_to_checkin' ), 5 );
 
 		// "Update now" from the Plugin Monitor. This site asks the monitor every
 		// 15 minutes whether there's anything for it and, when asked, installs
@@ -183,6 +184,68 @@ final class RAPIF_Updater {
 				'channel' => self::channel(),
 			)
 		);
+	}
+
+	/**
+	 * 0.3.6: makes sure every check-in to R&A's Plugin Monitor lists this
+	 * plugin, whichever plugin's copy of RA Monitor Client runs. On a site
+	 * where another R&A plugin's older copy (1.3.1 or earlier) loads first,
+	 * that copy only lists plugins on its own fixed list, which this one
+	 * isn't on; the monitor then calls it "probably deleted" (seen on
+	 * StarFine on Nov 12, 2026, even on 0.3.5). Uses the check-in's own
+	 * filter, there since RA Monitor Client 1.2.0.
+	 *
+	 * @param array $payload The check-in about to be sent.
+	 * @return array
+	 */
+	public static function add_to_checkin( $payload ) {
+		if ( ! is_array( $payload ) || ! isset( $payload['plugins'] ) || ! is_array( $payload['plugins'] ) ) {
+			return $payload;
+		}
+		foreach ( $payload['plugins'] as $entry ) {
+			if ( isset( $entry['slug'] ) && self::SLUG === $entry['slug'] ) {
+				return $payload; // Already listed.
+			}
+		}
+
+		$token  = self::token_info();
+		$health = array(
+			'channel'           => self::channel(),
+			'update_status'     => 'unknown',
+			'update_message'    => '',
+			'latest_available'  => '',
+			'last_update_check' => 0,
+		);
+
+		$checker = self::$checker;
+		if ( $checker && method_exists( $checker, 'getUpdateState' ) ) {
+			$state      = $checker->getUpdateState();
+			$last_check = (int) $state->getLastCheck();
+			$update     = $state->getUpdate();
+
+			$health['last_update_check'] = $last_check;
+			if ( $last_check ) {
+				if ( $update && ! empty( $update->version ) ) {
+					$health['update_status']    = 'ok';
+					$health['latest_available'] = (string) $update->version;
+				} else {
+					$health['update_status'] = '' === $token['token'] ? 'no_token' : 'failed';
+				}
+			}
+		}
+
+		$payload['plugins'][] = array_merge(
+			array(
+				'slug'      => self::SLUG,
+				'name'      => 'R&A Product Image Frames',
+				'version'   => RAPIF_VERSION,
+				'active'    => true,
+				'reporting' => true,
+			),
+			$health
+		);
+
+		return $payload;
 	}
 
 	/**
