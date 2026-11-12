@@ -2,7 +2,7 @@
 Contributors: ramarketing
 Requires at least: 5.8
 Requires PHP: 7.4
-Stable tag: 0.3.4
+Stable tag: 0.3.5
 License: GPL-2.0-or-later
 
 Keeps product photos the same size and lined up, without painting bars into the photos.
@@ -65,6 +65,10 @@ checklist. When every row says Ready, deactivate and delete Smart Image
 Resize PRO and ReThumbify Pro, then clear the WP Rocket and CDN caches.
 
 == Changelog ==
+
+= 0.3.5 - 2026-11-12 =
+* R&A's Plugin Monitor no longer shows a false "No GitHub token" warning
+  for R&A plugins that update from a public repo.
 
 = 0.3.4 - 2026-11-12 =
 * Shows up correctly in R&A's Plugin Monitor (it was listed as "probably
