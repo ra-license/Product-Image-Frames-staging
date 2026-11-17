@@ -70,6 +70,9 @@ Resize PRO and ReThumbify Pro, then clear the WP Rocket and CDN caches.
 * RA Monitor Client 1.4.0: after a plugin, theme or WordPress update,
   R&A's Website Monitor hears about it within a second instead of 5
   minutes later, so a site an update breaks is still reported.
+* The staging channel updates from ra-license/Product-Image-Frames-staging
+  (the staging repo R&A created on Nov 17; the old address never existed).
+  Live sites keep updating from R-A-Product-Image-Frames.
 
 = 0.3.6 - 2026-11-12 =
 * Always shows up in R&A's Plugin Monitor, even on sites where another R&A

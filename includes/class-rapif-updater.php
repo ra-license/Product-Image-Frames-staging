@@ -34,7 +34,8 @@ final class RAPIF_Updater {
 
 	const SLUG            = 'ra-product-image-frames';
 	const REPO_PRODUCTION = 'https://github.com/ra-license/R-A-Product-Image-Frames/';
-	const REPO_STAGING    = 'https://github.com/ra-license/R-A-Product-Image-Frames-staging/';
+	// 0.3.7: the staging repo R&A created (Nov 17, 2026) is named without "R-A-".
+	const REPO_STAGING    = 'https://github.com/ra-license/Product-Image-Frames-staging/';
 
 	const OPTION_TOKEN   = 'rapif_github_update_token';
 	const OPTION_CHANNEL = 'rapif_update_channel';
