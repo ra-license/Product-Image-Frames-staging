@@ -2,7 +2,7 @@
 Contributors: ramarketing
 Requires at least: 5.8
 Requires PHP: 7.4
-Stable tag: 0.3.6
+Stable tag: 0.3.7
 License: GPL-2.0-or-later
 
 Keeps product photos the same size and lined up, without painting bars into the photos.
@@ -65,6 +65,11 @@ checklist. When every row says Ready, deactivate and delete Smart Image
 Resize PRO and ReThumbify Pro, then clear the WP Rocket and CDN caches.
 
 == Changelog ==
+
+= 0.3.7 - 2026-11-17 =
+* RA Monitor Client 1.4.0: after a plugin, theme or WordPress update,
+  R&A's Website Monitor hears about it within a second instead of 5
+  minutes later, so a site an update breaks is still reported.
 
 = 0.3.6 - 2026-11-12 =
 * Always shows up in R&A's Plugin Monitor, even on sites where another R&A
