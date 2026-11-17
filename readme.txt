@@ -67,6 +67,7 @@ Resize PRO and ReThumbify Pro, then clear the WP Rocket and CDN caches.
 == Changelog ==
 
 = 0.3.7 - 2026-11-17 =
+* Released Nov 17, 2026 to the staging and production repos.
 * RA Monitor Client 1.4.0: after a plugin, theme or WordPress update,
   R&A's Website Monitor hears about it within a second instead of 5
   minutes later, so a site an update breaks is still reported.
