@@ -195,7 +195,10 @@ final class RAPIF_Settings {
 					<tr>
 						<th scope="row"><label for="rapif_github_token"><?php esc_html_e( 'GitHub Update Key', 'ra-product-image-frames' ); ?></label></th>
 						<td>
-							<input type="password" class="regular-text" id="rapif_github_token" name="<?php echo esc_attr( RAPIF_Updater::OPTION_TOKEN ); ?>" value="<?php echo esc_attr( $own_token ); ?>" autocomplete="off" placeholder="github_pat_..." />
+							<input type="password" class="regular-text" id="rapif_github_token" name="<?php echo esc_attr( RAPIF_Updater::OPTION_TOKEN ); ?>" value="" autocomplete="new-password" placeholder="<?php echo '' !== $own_token ? esc_attr__( 'Saved. Paste a new key to replace it.', 'ra-product-image-frames' ) : 'github_pat_...'; ?>" />
+							<?php if ( '' !== $own_token ) : ?>
+								<label style="display:block;margin-top:6px;"><input type="checkbox" name="rapif_github_token_remove" value="1" /> <?php esc_html_e( 'Remove the saved key', 'ra-product-image-frames' ); ?></label>
+							<?php endif; ?>
 							<?php if ( $token_locked ) : ?>
 								<p class="description"><?php esc_html_e( 'A key set in wp-config.php is already active and is used instead of this field.', 'ra-product-image-frames' ); ?></p>
 							<?php elseif ( '' === $own_token && '' !== $token['token'] ) : ?>

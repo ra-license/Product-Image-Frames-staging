@@ -260,7 +260,16 @@ final class RAPIF_Updater {
 		return 'staging' === $value ? 'staging' : 'production';
 	}
 
+	/**
+	 * 0.3.9 (security review item 3): the saved key is never printed back
+	 * into the page, so an empty box keeps it; "Remove the saved key" clears it.
+	 */
 	public static function sanitize_token( $value ) {
-		return preg_replace( '/[^A-Za-z0-9_]/', '', (string) $value );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- options.php checked the nonce.
+		if ( ! empty( $_POST['rapif_github_token_remove'] ) ) {
+			return '';
+		}
+		$value = preg_replace( '/[^A-Za-z0-9_]/', '', (string) $value );
+		return '' === $value ? (string) get_option( self::OPTION_TOKEN, '' ) : $value;
 	}
 }
