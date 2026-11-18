@@ -2,7 +2,7 @@
 Contributors: ramarketing
 Requires at least: 5.8
 Requires PHP: 7.4
-Stable tag: 0.3.7
+Stable tag: 0.3.8
 License: GPL-2.0-or-later
 
 Keeps product photos the same size and lined up, without painting bars into the photos.
@@ -65,6 +65,11 @@ checklist. When every row says Ready, deactivate and delete Smart Image
 Resize PRO and ReThumbify Pro, then clear the WP Rocket and CDN caches.
 
 == Changelog ==
+
+= 0.3.8 - 2026-11-18 =
+* RA Monitor Client 1.5.0: the site gets a key of its own for R&A's
+  Website Monitor (1.11.0+), proved by a call back to its own domain,
+  instead of the shared key that is in public code. Nothing to set up.
 
 = 0.3.7 - 2026-11-17 =
 * Released Nov 17, 2026 to the staging and production repos.
