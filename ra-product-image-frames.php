@@ -2,7 +2,7 @@
 /**
  * Plugin Name: R&A Product Image Frames
  * Description: Keeps product photos the same size and lined up on category and product pages without painting bars into the photos. Each photo sits centered in a white box, and the plugin makes light, compressed copies of product photos in the background.
- * Version: 0.3.9
+ * Version: 0.4.0
  * Author: RA Marketing
  * Requires at least: 5.8
  * Requires PHP: 7.4
@@ -94,6 +94,10 @@
 // added itself only to its own fixed list; StarFine still showed "probably
 // deleted" on 0.3.5). See RAPIF_Updater::add_to_checkin().
 //
+// v0.4.0 (2026-11-18): bundles RA Monitor Updates 1.1.0 (same file as RA Promo
+// Manager 1.75.0): R&A can roll this plugin back from the Website Monitor, and
+// a broken update package is refused before it's installed.
+//
 // v0.3.9 (2026-11-18): the saved GitHub update key is never printed back into
 // the settings page (security review item 3); see RAPIF_Updater::sanitize_token().
 //
@@ -113,7 +117,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'RAPIF_VERSION', '0.3.9' );
+define( 'RAPIF_VERSION', '0.4.0' );
 define( 'RAPIF_FILE', __FILE__ );
 
 require_once __DIR__ . '/includes/class-rapif-copies.php';
